@@ -1,7 +1,10 @@
 package edu.tamu.jcabelloc.datafiledemo;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -10,6 +13,11 @@ import android.view.View;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -57,6 +65,63 @@ public class MainActivity extends AppCompatActivity {
             file.createNewFile();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void saveImage(View view){
+        String imgFile = "ImgFile.png";
+        try {
+            OutputStream outputStream;
+            outputStream = openFileOutput(imgFile, Context.MODE_PRIVATE);
+            Bitmap myImage = getImage();
+            myImage.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+
+        }catch(Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (outputStream != null) {
+                    outputStream.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private Bitmap getImage() {
+        ImageDownloader task = new ImageDownloader();
+
+        Bitmap myImage = null;
+        try {
+            myImage = task.execute("https://upload.wikimedia.org/wikipedia/en/a/aa/Bart_Simpson_200px.png").get();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return myImage;
+
+    }
+
+    public class ImageDownloader extends AsyncTask<String, Void, Bitmap> {
+
+        @Override
+        protected Bitmap doInBackground(String... urls) {
+            try {
+                URL url = new URL(urls[0]);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.connect();
+                InputStream inputStream = connection.getInputStream();
+                Bitmap myBitmap = BitmapFactory.decodeStream(inputStream);
+                return myBitmap;
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+
         }
     }
 }
